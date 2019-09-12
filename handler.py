@@ -9,18 +9,18 @@ def authenticate():
          'Accept': '*/*', 
          'Accept-Language': 'en-GB,en;q=0.7,en-US;q=0.3' ,
          'Referer': 'https://stats.activy.pl/teams', 
-         'Authorization': 'Basic REDACTED' ,
+         'Authorization': 'Basic REDACTED",
          'Content-Type': 'application/x-www-form-urlencoded', 
          'Origin': 'https://stats.activy.pl', 
          'DNT': '1', 
          'TE': 'Trailers'
    }
-   data = 'grant_type=password&scope=openid+email+offline_access+activy.players+activy.contests+activy.rides&username=REDACTED&password=REDACTED'
+   data = 'grant_type=password&scope=openid+email+offline_access+activy.players+activy.contests+activy.rides&username=REDACTED&REDACTED'
    r = requests.post(URL, headers = headers, data = data)
    access_token = json.loads(r.text)["access_token"]
    return access_token
 
-def requestUrl(auth, URL):
+def requestUrl(auth, URL, additionalData):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
         'Accept': '*/*',
         'Accept-Language': 'en-GB,en;q=0.7,en-US;q=0.3',
@@ -34,46 +34,49 @@ def requestUrl(auth, URL):
     }    
 
     currentDate = datetime.datetime.now().isoformat("T")[:-3]+"Z"
-    data =  '{"ContestId":"8aa8ffc2-496f-4b2d-a26b-2042425124b4","Day":"%s","TeamGroupId":"208858d6-b6d7-411e-a289-475c1b026ba7","Type":"0"}' % currentDate
+    data =  '{%s"ContestId":"8aa8ffc2-496f-4b2d-a26b-2042425124b4","Day":"%s","TeamGroupId":"208858d6-b6d7-411e-a289-475c1b026ba7","Type":"0"}' % (additionalData,currentDate)
     r = requests.post(URL, headers = headers, data = data)
     if r.status_code != 200:
         r.raise_for_status()
     return r.text
 
 
-def getTeams(auth):
-    teams = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.TeamsRanking"))    
+def getTeams(auth, additionalData):
+    teams = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.TeamsRanking", additionalData))
     sumoTeams = filter(lambda t: "Sumo" in t['TeamName'], teams)
     
-    forEachTeam = map(lambda x: "<li>[%d] %s - <b>%d</b></li>" % (x['Score']['PointsPosition'], x['TeamName'], x['Score']['Points']), sumoTeams)
+    forEachTeam = map(lambda x: "<li style='background-color: %s'>[%d] %s - <b>%d</b></li>" %
+      (colorPerTeam(x['TeamName']), x['Score']['PointsPosition'], x['TeamName'], x['Score']['Points']), sumoTeams)
 
     return "<h2>Teams</h2><ul>" + "".join(forEachTeam) + "</ul>"
     
 def ourIds():
-    return ["b7c6d926-fc8c-4042-a7d8-130c433a0dad",    
-     "341093cd-2557-4385-b424-a73eda8d44e6",           
-     "f8dc551d-3536-44ac-a306-f1e5883a2427",          
-     "bd12f760-8164-45f4-a2df-f501899efe4e",          
-     "5bd075b5-f5f9-45b6-b017-1dcd3fd50870",       
+    return {
+     "b7c6d926-fc8c-4042-a7d8-130c433a0dad": "Sumo Logic Warsaw",
+     "341093cd-2557-4385-b424-a73eda8d44e6": "Sumo Logic Warsaw",
+     "f8dc551d-3536-44ac-a306-f1e5883a2427": "Sumo Logic Warsaw",
+     "bd12f760-8164-45f4-a2df-f501899efe4e": "Sumo Logic Warsaw",
+     "5bd075b5-f5f9-45b6-b017-1dcd3fd50870": "Sumo Logic Warsaw",
      
-     "28a746b8-2baf-4511-9a41-8fcf8d633cff",       
-     "25dade75-91aa-4560-972b-6cdb1dfef56a",        
-     "68671bc5-2c45-4b6e-8cb2-b6d3c8916c99",       
-     "ac43105c-c0c8-4e24-a4da-91de986d78bd",        
-     "d1e209f3-0437-4abb-9156-c66d76d7c50b",      
+     "28a746b8-2baf-4511-9a41-8fcf8d633cff": "Sumo Logicians",
+     "25dade75-91aa-4560-972b-6cdb1dfef56a": "Sumo Logicians",
+     "68671bc5-2c45-4b6e-8cb2-b6d3c8916c99": "Sumo Logicians",
+     "ac43105c-c0c8-4e24-a4da-91de986d78bd": "Sumo Logicians",
+     "d1e209f3-0437-4abb-9156-c66d76d7c50b": "Sumo Logicians",
      
-     "310cc307-b71d-4065-90d6-d9c29af7279c",      
-     "7aae52db-d9bf-4355-a30f-e8092ca5a69a",      
-     "7f10a04e-e0ab-4f3b-92d6-5cd3676c035b",      
-     "506cf2f4-0bde-4d12-b68f-8a0b3553b6dd",       
-     
-     ]
+     "310cc307-b71d-4065-90d6-d9c29af7279c": "Sumo Logic Bikers",
+     "7aae52db-d9bf-4355-a30f-e8092ca5a69a": "Sumo Logic Bikers",
+     "7f10a04e-e0ab-4f3b-92d6-5cd3676c035b": "Sumo Logic Bikers",
+     "506cf2f4-0bde-4d12-b68f-8a0b3553b6dd": "Sumo Logic Bikers",
+     "4f6aaac9-6cd8-40c6-a783-6db09b1eed15": "Sumo Logic Bikers",
+    }     
 
-def getUsers(auth):
-    users = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.UsersQueries.UserPlayersRanking"))    
-    ourUsers = filter(lambda u: u["Player"]["Id"] in ourIds(), users)
+def getUsers(auth, additionalData):
+    users = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.UsersQueries.UserPlayersRanking", additionalData))
+    ourUsers = filter(lambda u: u["Player"]["Id"] in ourIds().keys(), users)
     ourUsersSorted = sorted(ourUsers, key = lambda x: int(x["Score"]["PointsPosition"]), reverse = False)
-    forEachUser = map(lambda x: "<tr><td>[%d]</td><td>%s</td><td><b>%d</b></td><td>(%d bonus rides + %d km)</td></tr>" % (
+    forEachUser = map(lambda x: "<tr style='background-color:%s'><td>[%d]</td><td>%s</td><td><b>%d</b></td><td>(%d bonus rides + %d km)</td></tr>" % (
+        colorPerTeam(ourIds()[x["Player"]["Id"]]),
         x["Score"]["PointsPosition"], 
         x["Player"]["NickName"], 
         x["Score"]["Points"], 
@@ -82,8 +85,36 @@ def getUsers(auth):
     ourUsersSorted)
     return "<h2>Individuals</h2><table>" + "".join(forEachUser) +"</table>"
 
+def colorPerTeam(team):
+    colors = {"Sumo Logic Warsaw": "#9A9EAB", "Sumo Logicians": "#EC96A4", "Sumo Logic Bikers": "#DFE166"}
+    return colors[team]
+
 def lambda_handler(event, context):
     auth = authenticate()
     
-    return "<html><head></head><body>%s %s</body></html>" % (getTeams(auth), getUsers(auth))
+    edition2 = """"EditionId": "d13eb253-714b-4d35-8ec7-703942deef45","""
+    
+    return """
+    <html>
+      <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+      </head>
+      <body>
+        <div class="row">
+         <div class="jumbotron col-xs-6 bg-success">
+          %s %s
+         </div> 
+         <div class="jumbotron col-xs-6">
+          %s %s
+         </div> 
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>        
+      </body>
+    </html>
+    """ % (
+           getTeams(auth, edition2), getUsers(auth, edition2),
+           getTeams(auth, ""), getUsers(auth, ""),
+           )
 
