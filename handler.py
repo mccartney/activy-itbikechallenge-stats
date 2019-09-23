@@ -9,18 +9,18 @@ def authenticate():
          'Accept': '*/*', 
          'Accept-Language': 'en-GB,en;q=0.7,en-US;q=0.3' ,
          'Referer': 'https://stats.activy.pl/teams', 
-         'Authorization': 'Basic REDACTED",
+         'Authorization': 'Basic REDACTED' ,
          'Content-Type': 'application/x-www-form-urlencoded', 
          'Origin': 'https://stats.activy.pl', 
          'DNT': '1', 
          'TE': 'Trailers'
    }
-   data = 'grant_type=password&scope=openid+email+offline_access+activy.players+activy.contests+activy.rides&username=REDACTED&REDACTED'
+   data = 'grant_type=password&scope=openid+email+offline_access+activy.players+activy.contests+activy.rides&username=REDACTED&password=REDACTED'
    r = requests.post(URL, headers = headers, data = data)
    access_token = json.loads(r.text)["access_token"]
    return access_token
 
-def requestUrl(auth, URL, additionalData):
+def requestUrl(auth, URL, additionalData, date = None):
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0',
         'Accept': '*/*',
         'Accept-Language': 'en-GB,en;q=0.7,en-US;q=0.3',
@@ -32,17 +32,19 @@ def requestUrl(auth, URL, additionalData):
         'Connection': 'keep-alive',
         'TE': 'Trailers' 
     }    
-
-    currentDate = datetime.datetime.now().isoformat("T")[:-3]+"Z"
-    data =  '{%s"ContestId":"8aa8ffc2-496f-4b2d-a26b-2042425124b4","Day":"%s","TeamGroupId":"208858d6-b6d7-411e-a289-475c1b026ba7","Type":"0"}' % (additionalData,currentDate)
+ 
+    if not date: 
+        date = datetime.datetime.now().isoformat("T")[:-3]+"Z"
+        
+    data =  '{%s"ContestId":"8aa8ffc2-496f-4b2d-a26b-2042425124b4","Day":"%s","TeamGroupId":"208858d6-b6d7-411e-a289-475c1b026ba7","Type":"0"}' % (additionalData,date)
     r = requests.post(URL, headers = headers, data = data)
     if r.status_code != 200:
         r.raise_for_status()
     return r.text
 
 
-def getTeams(auth, additionalData):
-    teams = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.TeamsRanking", additionalData))
+def getTeams(auth, additionalData, date = None):
+    teams = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.TeamsRanking", additionalData, date))
     sumoTeams = filter(lambda t: "Sumo" in t['TeamName'], teams)
     
     forEachTeam = map(lambda x: "<li style='background-color: %s'>[%d] %s - <b>%d</b></li>" %
@@ -71,8 +73,8 @@ def ourIds():
      "4f6aaac9-6cd8-40c6-a783-6db09b1eed15": "Sumo Logic Bikers",
     }     
 
-def getUsers(auth, additionalData):
-    users = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.UsersQueries.UserPlayersRanking", additionalData))
+def getUsers(auth, additionalData, date = None):
+    users = json.loads(requestUrl(auth, "https://rankings.v3.activy.pl/api/query/Activy.Contests.Rankings.Contracts.UsersQueries.UserPlayersRanking", additionalData, date))
     ourUsers = filter(lambda u: u["Player"]["Id"] in ourIds().keys(), users)
     ourUsersSorted = sorted(ourUsers, key = lambda x: int(x["Score"]["PointsPosition"]), reverse = False)
     forEachUser = map(lambda x: "<tr style='background-color:%s'><td>[%d]</td><td>%s</td><td><b>%d</b></td><td>(%d bonus rides + %d km)</td></tr>" % (
@@ -93,7 +95,10 @@ def lambda_handler(event, context):
     auth = authenticate()
     
     edition2 = """"EditionId": "d13eb253-714b-4d35-8ec7-703942deef45","""
-    
+    edition2End = "2019-09-22T21:59:59.000Z"
+
+    edition3 = """"EditionId": "6c799830-0b49-496c-bd59-c86d6beaad01","""
+
     return """
     <html>
       <head>
@@ -101,10 +106,13 @@ def lambda_handler(event, context):
       </head>
       <body>
         <div class="row">
-         <div class="jumbotron col-xs-6 bg-success">
+         <div class="jumbotron col-xs-6 bg-success"> <h2>Edition 3</h2>
           %s %s
          </div> 
-         <div class="jumbotron col-xs-6">
+         <div class="jumbotron col-xs-6"> <h2>Edition 2</h2>
+          %s %s
+         </div> 
+         <div class="jumbotron col-xs-6"><h2>Overall</h2>
           %s %s
          </div> 
         </div>
@@ -114,7 +122,9 @@ def lambda_handler(event, context):
       </body>
     </html>
     """ % (
-           getTeams(auth, edition2), getUsers(auth, edition2),
+           getTeams(auth, edition3), getUsers(auth, edition3),
+           getTeams(auth, edition2, edition2End), getUsers(auth, edition2, edition2End),
            getTeams(auth, ""), getUsers(auth, ""),
            )
+
 
