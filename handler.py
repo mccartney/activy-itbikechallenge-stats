@@ -94,10 +94,10 @@ def colorPerTeam(team):
 def lambda_handler(event, context):
     auth = authenticate()
     
-    edition2 = """"EditionId": "d13eb253-714b-4d35-8ec7-703942deef45","""
-    edition2End = "2019-09-22T21:59:59.000Z"
+    edition4 = """"EditionId": "9b35cec2-fc21-4553-9703-e7f9bc5486d8", """
 
     edition3 = """"EditionId": "6c799830-0b49-496c-bd59-c86d6beaad01","""
+    edition3End = "2019-10-06T21:59:59.000Z"
 
     return """
     <html>
@@ -106,10 +106,10 @@ def lambda_handler(event, context):
       </head>
       <body>
         <div class="row">
-         <div class="jumbotron col-xs-6 bg-success"> <h2>Edition 3</h2>
+         <div class="jumbotron col-xs-6 bg-success"> <h2>Edition 4</h2>
           %s %s
          </div> 
-         <div class="jumbotron col-xs-6"> <h2>Edition 2</h2>
+         <div class="jumbotron col-xs-6"> <h2>Edition 3</h2>
           %s %s
          </div> 
          <div class="jumbotron col-xs-6"><h2>Overall</h2>
@@ -122,8 +122,8 @@ def lambda_handler(event, context):
       </body>
     </html>
     """ % (
-           getTeams(auth, edition3), getUsers(auth, edition3),
-           getTeams(auth, edition2, edition2End), getUsers(auth, edition2, edition2End),
+           getTeams(auth, edition4), getUsers(auth, edition4),
+           getTeams(auth, edition3, edition3End), getUsers(auth, edition3, edition3End),
            getTeams(auth, ""), getUsers(auth, ""),
            )
 
