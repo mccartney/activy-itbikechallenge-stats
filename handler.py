@@ -80,17 +80,18 @@ def getUsers(auth, additionalData = "", date = None):
     runningMaxStreak = dict([(person["Player"]["Id"], "%d 🏃" % round(person["Score"]["MaxStreak"])) for person in runningResults])
     
     usersSorted = sorted(users, key = lambda x: int(x["Score"]["PointsPosition"]), reverse = False)
+    usersSorted = filter(lambda x: x["Player"]["Id"] != "4c8b1a9f-6c14-4851-ac4a-23550cf0f0fc", usersSorted)
     forEachUser = map(lambda x: "<tr><td>[%d]</td><td>%s</td><td><b>%d</b></td><td>%s km</td><td>%s</td></tr>" % (
         x["Score"]["PointsPosition"], 
         nameWithAmendments(x["Player"]["NickName"]), 
         x["Score"]["Points"],
         " + ".join(map(str, filter(lambda x: x[:2] != "0 ", [result[x["Player"]["Id"]] for result in [cyclingDistance, runningDistance]]))),
-        " + ".join(map(str, filter(lambda x: x[:2] != "0 ", [result[x["Player"]["Id"]] for result in [cyclingMaxStreak, runningMaxStreak]]))),
+        " + ".join(map(str, filter(lambda x: x[:2] != "0 ", [result[x["Player"]["Id"]] for result in [cyclingMaxStreak, runningMaxStreak]])))
         ),
     usersSorted)
     return "<table class='table table-striped table-sm'>" +\
     "<tr><th>#</th><th>Who</th><th>Points</th><th>Distance</th><th>Max Streak</th></tr>" +\
-    "".join(forEachUser) +"</table>" + "\n<!--" + str(cyclingResults) +" -->"
+    "".join(forEachUser) +"</table>" # + "<!-- " + str(users) + "-->"
 
 def colorPerTeam(team):
     colors = {"Sumo Logic Warsaw": "#9A9EAB", "Sumo Logicians": "#EC96A4", "Sumo Logic Bikers": "#DFE166"}
@@ -98,6 +99,10 @@ def colorPerTeam(team):
 
 def lambda_handler(event, context):
     auth = authenticate()
+    
+    if 1 > 0:
+        return "Good luck"
+        
     
     return """
     <html>
@@ -107,9 +112,12 @@ def lambda_handler(event, context):
       </head>
       <body>
         <div class="row">
-         <div class="jumbotron col-xs-6"> <h2>Standings</h2>
+         <div class="jumbotron col-xs-6" style="background-color:#B19CD9"> <h2>Standings September</h2>
           %s
          </div> 
+        <div class="jumbotron col-xs-6 bg-success"> <h2>General classification</h2>
+          %s
+          </div> 
         </div>
         
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -118,7 +126,11 @@ def lambda_handler(event, context):
       </body>
     </html>
     """ % (
-        # getUsers(auth, additionalData = '"EditionId":"ef802327-30ec-451b-bafe-4a5d30f5d3af",'),
-           getUsers(auth))
+        getUsers(auth, additionalData = '"EditionId":"3aae5ac7-ed0d-4936-8a9f-ce873b678b59",'),
+           getUsers(auth)
+           )
 
-
+    # June = 13d160a8-ec32-46c6-a455-e11bffcfd8c1
+    # July = a5667270-d7c5-4fff-b07b-0f9646da635a
+    # August = 790a9f31-6f31-487b-b377-c1a7bd8e2a35
+    # Sept = 3aae5ac7-ed0d-4936-8a9f-ce873b678b59
